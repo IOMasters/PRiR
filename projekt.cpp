@@ -22,10 +22,18 @@ int main(int argc, char *argv[])
 	bool arrival;
 	int wait_cnt=0;
 	int arrival_cnt=0;
+	int arrival_sum,exit_sum,queue_sum;
 	int queue=0;
 	int queue_accum=0;
 	int exit_cnt=0;
-
+	int n=1000000;
+	float pwd=0.5;
+	if(argc >2)
+	{
+		sscanf(argv[1], "%d", &n);
+		sscanf(argv[2], "%f", &pwd);
+		printf("Hura\n");
+	}
 	for (int i = 0; i < 5; ++i)
 	{
 		segment[i]=-1;
@@ -38,9 +46,9 @@ int main(int argc, char *argv[])
 
   	init_sprng(seed,CRAYLCG, 2);	/* initialize stream               */
 
-    for (int i = 0; i < 10000; ++i)
+    for (int i = 0; i < n; ++i)
 	{
-		if(sprng()<1.0/(double)nprocs)
+		if(sprng()<pwd)
 		{
 			arrival=true;
 			arrival_cnt++;
@@ -82,8 +90,15 @@ int main(int argc, char *argv[])
 	
 		
 	}
-	printf("Proces numer: %d Wait: %d Przybyło:%d Kolejka %d %d Opuściło: %d \n", myid,wait_cnt,arrival_cnt,queue,queue_accum,exit_cnt);
 
+	printf("Proces numer: %d Wait: %d Przybyło:%d Kolejka %d Opuściło: %d \n", myid,wait_cnt,arrival_cnt,queue,exit_cnt);
+	MPI_Reduce(&arrival_cnt,&arrival_sum,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
+	MPI_Reduce(&exit_cnt,&exit_sum,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
+	MPI_Reduce(&queue,&queue_sum,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
+	if(myid==0)
+	{
+		printf("Ogołem przybyło %d opuściło %d w kolejce %d na rondzie %d\n",arrival_sum,exit_sum,queue_sum,arrival_sum-(exit_sum+queue_sum)  );
+	}
     MPI_Finalize();	
 }
 
